@@ -11,7 +11,7 @@ unsigned char is_touch() {
 	PA_ODR &= ~0x02;
 	while (PA_IDR&0x04) ++count;
 	
-	return count>15;
+	return count>13;
 }
 
 void wait_for_touch() {
