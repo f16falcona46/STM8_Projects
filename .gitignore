@@ -1,0 +1,11 @@
+*.asm
+*.ihx
+*.rel
+*.sym
+*.lk
+*.lst
+*.map
+*.adb
+*.cdb
+*.rst
+*.elf
