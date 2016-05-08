@@ -43,13 +43,15 @@ void main() {
 	}
 	PC_DDR = 0; //read pins
 	
-	__asm rim __endasm; //enable interrupt
-	
 	while (PA_IDR & (1<<3)); //wait for start
 	PA_ODR |= (1<<1); //TODO: whatever is needed to start h-bridge
-	while (count<count_max);
-	PA_ODR &= ~(1<<1); //TODO: whatever is needed to stop h-bridge
 	
-	PD_CR2 &= ~(1<<4); //disable external interrupts on PD4
+	__asm rim __endasm; //enable interrupt
+	while (count<count_max);
 	__asm halt __endasm; //halt
+	
+	PA_ODR &= ~(1<<1); //TODO: whatever is needed to stop h-bridge
+	PD_CR2 &= ~(1<<4); //disable external interrupts on PD4
+	
+	while (1);
 }
