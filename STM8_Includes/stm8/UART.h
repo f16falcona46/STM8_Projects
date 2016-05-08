@@ -1,7 +1,7 @@
 #ifndef UART_UTIL_FUNCTIONS
 #define UART_UTIL_FUNCTIONS
 
-#include "stm8s103.h"
+#include <stm8s103.h>
 
 void putchar(char c) {
 	while(!(UART1_SR & (1 << 7)));

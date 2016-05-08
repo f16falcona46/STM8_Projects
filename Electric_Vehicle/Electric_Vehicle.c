@@ -35,10 +35,10 @@ void main() {
 	PC_DDR = (1<<5);
 	for (;i<4;++i) {
 		pause(1);
-		count_max |= (((PC_ODR&(1<<7))>>5) |
-			((PC_ODR&(1<<6))>>3) |
-			((PD_ODR&(1<<2))>>1) |
-			((PD_ODR&(1<<3))>>3))<<(i<<2);
+		count_max |= (((PC_IDR&(1<<7))>>5) |
+			((PC_IDR&(1<<6))>>3) |
+			((PD_IDR&(1<<2))>>1) |
+			((PD_IDR&(1<<3))>>3))<<(i<<2);
 		PC_DDR <<= 1;
 	}
 	PC_DDR = 0; //read pins
