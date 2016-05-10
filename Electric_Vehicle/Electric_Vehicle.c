@@ -32,6 +32,7 @@ void main() {
 	PD_CR1 = (1<<2)|(1<<3); //pullup on PC2,3
 	PD_CR2 = (1<<4); //enable external interrupt on PD4
 	
+	/*
 	PC_DDR = (1<<5);
 	for (;i<4;++i) {
 		pause(1);
@@ -42,6 +43,7 @@ void main() {
 		PC_DDR <<= 1;
 	}
 	PC_DDR = 0; //read pins
+	*/ //lol gg i suck at circuits
 	
 	while (PA_IDR & (1<<3)); //wait for start
 	PA_ODR |= (1<<1); //TODO: whatever is needed to start h-bridge
