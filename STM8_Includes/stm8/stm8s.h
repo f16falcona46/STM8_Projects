@@ -3,6 +3,33 @@
 
 #include <stdint.h>
 
+/* (C) 2016 Jason Li, usable in any form as long as this notice is retained */
+
+/* Interrupt Vectors */
+#define TLI_VECT 0
+#define AWU_VECT 1
+#define CLK_VECT 2
+#define EXTI0_VECT 3
+#define EXTI1_VECT 4
+#define EXTI2_VECT 5
+#define EXTI3_VECT 6
+#define EXTI4_VECT 7
+#define SPI_EOT_VECT 10
+#define TIM1_UOUTB_VECT 11
+#define TIM1_CC_VECT 12
+#define TIM2_UO_VECT 13
+#define TIM2_CC_VECT 14
+#define TIM3_UO_VECT 15
+#define TIM3_CC_VECT 16
+#define UART1_TXC_VECT 17
+#define UART1_RXC_VECT 18
+#define I2C_VECT 19
+#define UART2_TXC_VECT 20
+#define UART2_RXC_VECT 21
+#define ADC1_EOCWD_VECT 22
+#define TIM4_UO_VECT 23
+#define FLASH_EOP_VECT 24
+
 /* GPIO */
 #define PA_ODR (*(volatile uint8_t*)0x005000)
 #define PA_IDR (*(volatile uint8_t*)0x005001)
