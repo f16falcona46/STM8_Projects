@@ -75,8 +75,6 @@ void main() {
 	
 	while (PF_IDR & (1<<4)); //wait for start
 	
-	pause(1);
-	
 	count_max |= (PD_IDR & ((1<<3)|(1<<2)))<<(12);
 	count_max |= (PD_IDR & (1<<0))<<(13);
 	count_max |= (PC_IDR & (~(1<<0)))<<(5);
