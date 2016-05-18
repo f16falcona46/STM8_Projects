@@ -91,6 +91,8 @@ void main() {
 	count_max |= (PB_IDR & (1<<3))>>2;
 	count_max |= (PB_IDR & (1<<4))>>4;
 	
+	count_max = ~count_max;
+	
 	__asm rim __endasm; //enable interrupt
 	PA_ODR |= (1<<1); //TODO: start motor
 	while (count<count_max);
