@@ -4,40 +4,44 @@
 #include <stm8/timing.h>
 
 /*
+UART_TX C
+
+NRST C
+
 input pin
 PB5
 
 LED pin
-PD7
+PD7 C
 
 motor pins
-PA1
+PA1 C
 PA2
 
 start button pin
-PF4
+PF4 C
 
 configuration DIP switch
 HIGH
-PD3 15
-PD2 14
-PD0 13
+PD3 15 C
+PD2 14 C
+PD0 13 C
 
-PC7 12
-PC6 11
-PC5 10
-PC4 9
-PC3 8
-PC2 7
-PC1 6
+PC7 12 C
+PC6 11 C	
+PC5 10 C
+PC4 9  C
+PC3 8  C
+PC2 7  C
+PC1 6  C
 
-PE5 5
+PE5 5  C
 
-PB0 4
-PB1 3
-PB2 2
-PB3 1
-PB4 0
+PB0 4  C
+PB1 3  C
+PB2 2  C
+PB3 1  C
+PB4 0  C
 LOW
 */
 
