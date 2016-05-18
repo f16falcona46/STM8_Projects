@@ -24,57 +24,30 @@ void main() {
 	CLK_CKDIVR = 0x00; // Set the frequency to 16 MHz
 	CLK_PCKENR1 = 0xFF; // Enable peripherals
 	
-	PB_CR1 = (1<<4);
+	PB_CR1 = 0x1F;
 	
-	//no outputs on port C, the outputs will be done manually
-	PC_CR1 = (1<<3)|(1<<4)|(1<<5);
-	PC_CR1 = (1<<6)|(1<<7); //pullup on PC6,7
+	PC_CR1 = 0xFE;
 	
-	//no outputs on port D
-	PD_CR1 = (1<<2)|(1<<3); //pullup on PC2,3
+	PD_CR1 = 0x0F;
 	
+	PE_CR1 = 0x20;
 	
 	set9600_8N1();
 	set_TX(1);
 	
 	while (1) {
 		count_max = 0;
-		PB_DDR &= ~(1<<4);
-		PC_DDR &= ~((1<<3)|(1<<4)|(1<<5));
 		
-		PB_DDR |= (1<<4);
-		pause(10);
-		count_max |= (((PC_IDR&(1<<6))>>3)|
-			((PC_IDR&(1<<7))>>5)|
-			((PD_IDR&(1<<2))>>1)|
-			((PD_IDR&(1<<3))>>3))<<12;
-		PB_DDR &= ~(1<<4);
-		
-		PC_DDR |= (1<<3);
-		pause(10);
-		count_max |= (((PC_IDR&(1<<6))>>3)|
-			((PC_IDR&(1<<7))>>5)|
-			((PD_IDR&(1<<2))>>1)|
-			((PD_IDR&(1<<3))>>3))<<8;
-		PC_DDR &= ~(1<<3);
-		
-		PC_DDR |= (1<<4);
-		pause(10);
-		count_max |= (((PC_IDR&(1<<6))>>3)|
-			((PC_IDR&(1<<7))>>5)|
-			((PD_IDR&(1<<2))>>1)|
-			((PD_IDR&(1<<3))>>3))<<4;
-		PC_DDR &= ~(1<<4);
-		
-		PC_DDR |= (1<<5);
-		pause(10);
-		count_max |= (((PC_IDR&(1<<6))>>3)|
-			((PC_IDR&(1<<7))>>5)|
-			((PD_IDR&(1<<2))>>1)|
-			((PD_IDR&(1<<3))>>3))<<0;
-		PC_DDR &= ~(1<<5);
-		
-		//printf("%04x\r\n",count_max);
+		count_max |= (PD_IDR & ((1<<3)|(1<<2)))<<(12);
+		count_max |= (PD_IDR & (1<<0))<<(13);
+		count_max |= (PC_IDR & (~(1<<0)))<<(5);
+		count_max |= (PE_IDR & (1<<5));
+		count_max |= (PB_IDR & (1<<0))<<4;
+		count_max |= (PB_IDR & (1<<1))<<2;
+		count_max |= (PB_IDR & (1<<2))<<0;
+		count_max |= (PB_IDR & (1<<3))>>2;
+		count_max |= (PB_IDR & (1<<4))>>4;
+	
 		print_binary(count_max);
 		putchar('\r');
 		putchar('\n');
