@@ -88,8 +88,9 @@ void main() {
 	count_max |= (PB_IDR & (1<<4))>>4;
 	
 	__asm rim __endasm; //enable interrupt
+	PA_ODR |= (1<<1); //TODO: start motor
 	while (count<count_max);
-	__asm halt __endasm; //halt
+	__asm sim __endasm; //disable interrupt
 	
 	PA_ODR &= ~(1<<1); //TODO: whatever is needed to stop h-bridge
 	PB_CR2 &= ~(1<<5); //disable external interrupts on PD4
