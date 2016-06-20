@@ -1,4 +1,20 @@
-#include <stdio.h>
+#include <stm8/stm8s.h>
+
+void update_pins(CPU_State *state) {
+	unsigned char PA_OR = (state->mem)[0xff];
+	unsigned char PA_DR = (state->mem)[0xfd];
+	
+	(state->mem)[0xfe] = (PD_IDR << 1) | ((PC_IDR & 0xc0) >> 6);
+	
+	PD_ODR = ((PA_OR & 0xfc) >> 1) | (PD_ODR & 0x03);
+	PC_ODR = ((PA_OR & 0x03) << 6) | (PC_ODR & 0x3f);
+	
+	PD_DDR = ((PA_DR & 0xfc) >> 1) | (PD_DDR & 0x03);
+	PC_DDR = ((PA_DR & 0x03) << 6) | (PC_DDR & 0x3f);
+	
+	PD_CR1 = ((PA_DR & 0xfc) >> 1) | (PD_CR1 & 0x03);
+	PC_CR1 = ((PA_DR & 0x03) << 6) | (PC_CR1 & 0x3f);
+}
 
 typedef struct {
 	unsigned char a;
@@ -10,6 +26,7 @@ typedef struct {
 	unsigned char* mem;
 } CPU_State;
 
+#ifdef ENABLE_CPU_STATE_DEBUG
 void print_state(CPU_State *state) {
 	printf("A:  %02x\n", state->a);
 	printf("X:  %02x\n", state->x);
@@ -18,6 +35,7 @@ void print_state(CPU_State *state) {
 	printf("PC: %04x\n", state->pc);
 	printf("CC: %02x\n", state->cc);
 }
+#endif
 
 void update_cc(CPU_State *state, unsigned char result) {
 	if (result) {
@@ -38,7 +56,7 @@ void simulate_step(CPU_State *state) {
 	{
 		unsigned char dest_loc = (instruction&0x38)>>3;
 		unsigned char source_loc = (instruction&0x07);
-		unsigned char source;
+		unsigned char source = 0;
 		switch (source_loc&0x03) {
 		case 0: source = state->a; //source is a
 		break;
@@ -74,8 +92,8 @@ void simulate_step(CPU_State *state) {
 	break;
 	case 1: //bitop
 	{
-		unsigned char source;
-		unsigned char dest;
+		unsigned char source = 0;
+		unsigned char dest = 0;
 		switch (instruction&0x03) {
 		case 0: source = state->a; break;
 		case 1: source = state->x; break;
@@ -125,8 +143,8 @@ void simulate_step(CPU_State *state) {
 		case 0:
 		case 1:
 		{
-			unsigned char source;
-			unsigned char dest;
+			unsigned char source = 0;
+			unsigned char dest = 0;
 			switch (instruction&0x03) {
 			case 0: source = state->a; break;
 			case 1: source = state->x; break;
@@ -165,17 +183,19 @@ void simulate_step(CPU_State *state) {
 	state->pc += pc_increment;
 }
 
-int main() {
-	CPU_State state;
-	unsigned char rom[] = {
+unsigned char rom[] = {
 		0x07, 0xfd, 0x0b, 0x01, 0x51, 0x38, 0xfd, 0x13,
 		0x00, 0x03, 0x00, 0xc1, 0x83, 0x00, 0x2b, 0xc9,
 		0x83, 0x00, 0x29, 0x07, 0xff, 0x13, 0x01, 0x62,
 		0x38, 0xff, 0xbf, 0x00, 0x27
-	};
-	unsigned char mem[1024] = {0};
-	unsigned char lastIO;
-	for (int i = 0x20; i <= 0x3c; ++i) {
+};
+
+unsigned char mem[1024] = {0};
+
+void main() {
+	CPU_State state;
+	int i = 0;
+	for (i = 0x20; i <= 0x3c; ++i) {
 		mem[i] = rom[i-0x20];
 	}
 	state.a = 0;
@@ -185,18 +205,8 @@ int main() {
 	state.cc = 0;
 	state.pc = 0x20;
 	state.mem = mem;
-	lastIO = (state.mem)[0xff];
-	for (int i = 0; i < 10000000; ++i) {
+	while (1) {
 		simulate_step(&state);
-		if (lastIO != (state.mem)[0xff]) {
-			lastIO = (state.mem)[0xff];
-			printf("PA_OR: %02x, CYC:%d\n", lastIO,i);
-			//print_state(&state);
-			//putchar('\n');
-		}
+		update_pins(&state);
 	}
-	print_state(&state);
-	printf("\n");
-	printf("%02x\n",(state.mem)[0xff]);
-	return 0;
 }
