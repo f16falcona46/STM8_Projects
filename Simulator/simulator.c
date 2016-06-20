@@ -1,21 +1,32 @@
 #include <stm8/stm8s.h>
 #include <stdint.h>
 
-typedef struct {
+uint8_t rom[] = {
+		0x07, 0xfd, 0x0b, 0x01, 0x51, 0x38, 0xfd, 0x13,
+		0x00, 0x03, 0x00, 0xc1, 0x83, 0x02, 0x0b, 0xc9,
+		0x83, 0x02, 0x09, 0x07, 0xff, 0x13, 0x01, 0x62,
+		0x38, 0xff, 0xbf, 0x02, 0x07
+};
+
+uint8_t ram[512] = {0};
+
+typedef struct CPU_State_s {
 	uint8_t a;
 	uint8_t x;
 	uint8_t y;
 	uint8_t sp;
 	uint16_t pc;
 	uint8_t cc;
-	uint8_t* mem;
+	uint8_t *(*func_to_get_mem)(struct CPU_State_s *, uint16_t);
+	uint8_t *rom;
+	uint8_t *ram;
 } CPU_State;
 
 void update_pins(CPU_State *state) {
-	uint8_t pa_or = (state->mem)[0xff];
-	uint8_t pa_dr = (state->mem)[0xfd];
+	uint8_t pa_or = *(state->func_to_get_mem)(state, 0xff);
+	uint8_t pa_dr = *(state->func_to_get_mem)(state, 0xfd);
 	
-	(state->mem)[0xfe] = (PD_IDR << 1) | ((PC_IDR & 0xc0) >> 6);
+	*(state->func_to_get_mem)(state, 0xfe) = (PD_IDR << 1) | ((PC_IDR & 0xc0) >> 6);
 	
 	PD_ODR = ((pa_or & 0xfc) >> 1) | (PD_ODR & 0x03);
 	PC_ODR = ((pa_or & 0x03) << 6) | (PC_ODR & 0x3f);
@@ -25,6 +36,15 @@ void update_pins(CPU_State *state) {
 	
 	PD_CR1 = ((pa_dr & 0xfc) >> 1) | (PD_CR1 & 0x03);
 	PC_CR1 = ((pa_dr & 0x03) << 6) | (PC_CR1 & 0x3f);
+}
+
+uint8_t *get_mem(CPU_State *state, uint16_t index) {
+	if (index > 0x1ff) {
+		return state->rom + index - 0x200;
+	}
+	else {
+		return state->ram + index;
+	}
 }
 
 #ifdef ENABLE_CPU_STATE_DEBUG
@@ -49,7 +69,7 @@ void update_cc(CPU_State *state, uint8_t result) {
 }
 
 void simulate_step(CPU_State *state) {
-	uint8_t instruction = (state->mem)[state->pc];
+	uint8_t instruction = *(state->func_to_get_mem)(state, state->pc);
 	uint8_t prefix = (instruction&0xc0)>>6;
 	uint8_t pc_increment = 1;
 	switch (prefix) {
@@ -65,18 +85,18 @@ void simulate_step(CPU_State *state) {
 		break;
 		case 2: source = state->y; //source is y
 		break;
-		case 3: source = (state->mem)[state->pc + 1]; //source is immediate
+		case 3: source = *(state->func_to_get_mem)(state, state->pc + 1); //source is immediate
 			++pc_increment;
 		break;
 		default: break;
 		}
-		if (source_loc&0x04) source = (state->mem)[source]; //source is indirect
+		if (source_loc&0x04) source = *(state->func_to_get_mem)(state, source); //source is indirect
 		if (dest_loc&0x04) {
 			switch (dest_loc&0x03) {
-			case 0: (state->mem)[state->a] = source; break; //dest is indirect a
-			case 1: (state->mem)[state->x] = source; break; //dest is indirect x
-			case 2: (state->mem)[state->y] = source; break; //dest is indirect y
-			case 3: (state->mem)[(state->mem)[state->pc + 1]] = source; ++pc_increment; break; //dest is indirect imm
+			case 0: *(state->func_to_get_mem)(state, state->a) = source; break; //dest is indirect a
+			case 1: *(state->func_to_get_mem)(state, state->x) = source; break; //dest is indirect x
+			case 2: *(state->func_to_get_mem)(state, state->y) = source; break; //dest is indirect y
+			case 3: *(state->func_to_get_mem)(state, *(state->func_to_get_mem)(state, state->pc + 1)) = source; ++pc_increment; break; //dest is indirect imm
 			default: break;
 			}
 		}
@@ -130,7 +150,7 @@ void simulate_step(CPU_State *state) {
 		if (!(instruction&0x20)) timeToJump = !timeToJump;
 
 		if (timeToJump) {
-			state->pc = ((state->mem)[state->pc+1]<<8)|((state->mem)[state->pc+2]);
+			state->pc = (*(state->func_to_get_mem)(state, state->pc+1)<<8)|(*(state->func_to_get_mem)(state, state->pc+2));
 			pc_increment = 0;
 		}
 		else {
@@ -184,28 +204,18 @@ void simulate_step(CPU_State *state) {
 	state->pc += pc_increment;
 }
 
-uint8_t rom[] = {
-		0x07, 0xfd, 0x0b, 0x01, 0x51, 0x38, 0xfd, 0x13,
-		0x00, 0x03, 0x00, 0xc1, 0x83, 0x00, 0x2b, 0xc9,
-		0x83, 0x00, 0x29, 0x07, 0xff, 0x13, 0x01, 0x62,
-		0x38, 0xff, 0xbf, 0x00, 0x27
-};
-
-uint8_t mem[1024] = {0};
-
 void main() {
 	CPU_State state;
 	int i = 0;
-	for (i = 0x20; i <= 0x3c; ++i) {
-		mem[i] = rom[i-0x20];
-	}
 	state.a = 0;
 	state.x = 0;
 	state.y = 0;
 	state.sp = 0;
 	state.cc = 0;
-	state.pc = 0x20;
-	state.mem = mem;
+	state.pc = 0x200;
+	state.func_to_get_mem = get_mem;
+	state.rom = rom;
+	state.ram = ram;
 	while (1) {
 		simulate_step(&state);
 		update_pins(&state);
