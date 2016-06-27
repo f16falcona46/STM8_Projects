@@ -4,101 +4,23 @@
 #include <stm8/stm8s.h>
 #include <stm8/timing.h>
 #include <stm8/UART.h>
+#include <stm8/macronix_spi_cmds.h>
+#include <stm8/SPI.h>
 #include <stdio.h>
 
-/* Commands */
-/* 0x00 is a placeholder for a user input */
-
-//WRite ENable
-const uint8_t WREN_cmd[] = {0x06}; //no dest
-const uint16_t WREN_cmd_len = 1;
-
-//WRite DIsable
-const uint8_t WRDI_cmd[] = {0x04}; //no dest
-const uint16_t WRDI_cmd_len = 1;
-
-//ReaD Status Register
-const uint8_t RDSR_cmd[] = {0x05}; //dest length 2 bytes
-const uint16_t _cmd_len = 1;
-
-//WRite Status Register
-uint8_t WRSR_cmd[] = {0x01, 0x00}; //no dest, set second byte to whatever you like
-const uint16_t WRSR_cmd_len = 2;
-
-//READ
-uint8_t READ_cmd[] = {0x03, 0x00, 0x00, 0x00}; //dest is as long as you like, bytes 2-4 are the 24-bit address (MSB first)
-const uint16_t READ_cmd_len = 4;
-
-//FAST READ (at higher speeds)
-uint8_t FAST_READ_cmd[] = {0x0b, 0x00, 0x00, 0x00, 0xff}; //dest is as long as you like, bytes 2-4 are 24-bit addr (MSB first), 0xff is dummy byte
-const uint16_t FAST_READ_cmd_len = 5;
-
-//Sector Erase
-uint8_t SE_cmd[] = {0x20, 0x00, 0x00, 0x00}; //no dest, bytes 2-4 are 24-bit addr (MSB first)
-const uint16_t SE_cmd_len = 4;
-
-//Block Erase
-uint8_t BE_cmd[] = {0x52, 0x00, 0x00, 0x00}; //no dest, bytes 2-4 are 24-bit addr (MSB first) (0x52 can also be 0xd8)
-const uint16_t BE_cmd_len = 4;
-
-//Chip Erase
-const uint8_t CE_cmd[] = {0x60}; //no dest (0x60 can also be 0xc7)
-const uint16_t CE_cmd_len = 1;
-
-//Page Program
-//IMPORTANT NOTE: You should copy this somewhere else, since you will need 260 bytes to send it and it will needlessly consume RAM otherwise.
-const uint8_t PP_cmd[] = {0x02, 0x00, 0x00, 0x00}; //no dest, bytes 2-4 are 24-bit addr (MSB first), bytes 5-260 are bytes to program to the page
-const uint16_t PP_cmd_len = 260;
-
-//Deep Power-down
-const uint8_t DP_cmd[] = {0xb9}; //no dest
-const uint16_t DP_cmd_len = 1;
-
-//Read Electronic Signature
-const uint8_t RES_cmd[] = {0xab, 0xff, 0xff, 0xff}; //1 dest, bytes 2-4 are dummy
-const uint16_t RES_cmd_len = 4;
-
-//Release from Deep Power-down
-const uint8_t RDP_cmd[] = {0xab}; //no dest
-const uint16_t RDP_cmd_len = 1;
-
-//ReaD IDentification
-const uint8_t RDID_cmd[] = {0x9f}; //3 dest (Manufacturer (8bit), Device (16bit))
-const uint16_t RDID_cmd_len = 1;
-
-//Read Electronic Manufacturer and device ID
-uint8_t REMS_cmd[] = {0x90, 0xff, 0xff, 0x00}; //2 dest (Manufacturer ID (8bit), Device ID (8bit)), bytes 2-3 are dummy, byte 4 is 8-bit addr
-const uint16_t REMS_cmd_len = 4;
-
-uint8_t SPI_transfer(uint8_t output) {
-	while (!(SPI_SR&(1<<1)));
-	SPI_DR = output;
-	while (!(SPI_SR&(1<<0)));
-	output = SPI_DR;
-	return output;
-}
-
-void SPI_transfer_buf(uint8_t* source, uint8_t* dest, uint16_t len) {
-	uint16_t index = 0;
-	for (;index < len; ++index) {
-		dest[index] = SPI_transfer(source[index]);
-	}
-}
-
-void SPI_cmd(uint8_t* cmd, uint16_t cmd_len, uint8_t* dest, uint16_t dest_len) {
-	uint16_t index = 0;
-	PC_ODR &= ~(1<<4); //assert CS# low
-	for (;index < cmd_len; ++index) {
-		SPI_transfer(cmd[index]);
-	}
-	for (index = 0; index < dest_len; ++index) {
-		dest[index] = SPI_transfer(0);
-	}
-	PC_ODR |= (1<<4); //release CS# (make it high)
+void print_hex(uint8_t num) {
+	uint8_t lowNib = num&0x0f;
+	uint8_t highNib = (num&0xf0)>>4;
+	if (highNib < 10) putchar('0'+highNib);
+	else putchar('a'+highNib-10);
+	if (lowNib < 10) putchar('0'+lowNib);
+	else putchar('a'+lowNib-10);
 }
 
 void main() {
-	uint8_t buf[3];
+	uint8_t buf[260];
+	uint8_t SR;
+	int i;
 	CLK_CKDIVR = 0x00; //16mhz
 	CLK_PCKENR1 = 0xFF; // Enable peripherals
 	SPI_CR2 |= (1<<1)|(1<<0); //SSM (software slave mgmt) on, SSI on (master mode)
@@ -110,10 +32,45 @@ void main() {
 	
 	set9600_8N1();
 	set_TX(1);
-	putchar('a');
-	while (1) {
-		SPI_cmd(RDID_cmd, 1, buf, 3);
-		printf("%02x %04x\r\n", buf[0], buf[1]<<8|buf[2]);
-		pause_ds(1);
+	
+	SPI_cmd(WREN_cmd, WREN_cmd_len, 0, 0);
+	printf("Starting chip erase...\r\n");
+	SPI_cmd(CE_cmd, CE_cmd_len, 0, 0);
+	do {
+		SPI_cmd(RDSR_cmd, RDSR_cmd_len, &SR, 1);
+	} while (SR&(0x01));
+	printf("Done.\r\n");
+	
+	printf("Writing 0-255...\r\n");
+	buf[0] = PP_cmd[0];
+	buf[1] = 0;
+	buf[2] = 0;
+	buf[3] = 0;
+	SR = 0;
+	do {
+		buf[SR+4] = SR<<1;
+		++SR;
+	} while (SR);
+	SPI_cmd(WREN_cmd, WREN_cmd_len, 0, 0);
+	SPI_cmd(buf, PP_cmd_len, 0, 0);
+	do {
+		SPI_cmd(RDSR_cmd, RDSR_cmd_len, &SR, 1);
+	} while (SR&(0x01));
+	printf("Done.\r\n");
+	
+	printf("Reading...\r\n");
+	READ_cmd[1] = 0;
+	READ_cmd[2] = 0;
+	READ_cmd[3] = 0;
+	SPI_cmd(READ_cmd, READ_cmd_len, buf, 256);
+	for (i = 0; i < 256; ++i) {
+		print_hex(i);
+		putchar(' ');
+		print_hex(buf[i]);
+		putchar('\r');
+		putchar('\n');
 	}
+	printf("Done.\r\n");
+	
+	while (1);
 }
