@@ -58,7 +58,7 @@ int main()
 	__asm rim __endasm;
 	
 	
-	TIM1_CCMR3 = (1<<6) | (1<<5) | (0<<4);
+	TIM1_CCMR3 = (1<<6) | (1<<5) | (0<<4); //PWM mode 1 (ON if count < CCR)
 	TIM1_CCER2 |= (1<<0); //enable timer output
 	TIM1_CR1 |= (1<<0); //enable timer
 	
