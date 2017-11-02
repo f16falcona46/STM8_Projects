@@ -9,14 +9,14 @@ uint8_t SPI_transfer(uint8_t output) {
 	return output;
 }
 
-void SPI_transfer_buf(uint8_t* source, uint8_t* dest, uint16_t len) {
+void SPI_transfer_buf(const uint8_t* source, uint8_t* dest, uint16_t len) {
 	uint16_t index = 0;
 	for (;index < len; ++index) {
 		dest[index] = SPI_transfer(source[index]);
 	}
 }
 
-void SPI_cmd(uint8_t* cmd, uint16_t cmd_len, uint8_t* dest, uint16_t dest_len) {
+void SPI_cmd(const uint8_t* cmd, uint16_t cmd_len, uint8_t* dest, uint16_t dest_len) {
 	uint16_t index = 0;
 	PC_ODR &= ~(1<<4); //assert CS# low
 	for (;index < cmd_len; ++index) {

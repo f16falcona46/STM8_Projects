@@ -183,7 +183,7 @@
  #define TIM4_ARR $005348
 
 
- #define ADC_DBxR ((volatile uint8_t*)$0053E0)
+ #define ADC_DBxR $0053E0
  #define ADC_CSR $005400
  #define ADC_CR1 $005401
  #define ADC_CR2 $005402
