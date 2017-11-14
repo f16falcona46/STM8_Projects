@@ -1,6 +1,8 @@
 #ifndef SPI_FUNCTIONS_INCLUDES
 #define SPI_FUNCTIONS_INCLUDES
 
+#include <stm8/stm8s.h>
+
 uint8_t SPI_transfer(uint8_t output) {
 	while (!(SPI_SR&(1<<1)));
 	SPI_DR = output;

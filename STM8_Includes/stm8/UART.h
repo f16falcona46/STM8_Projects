@@ -1,11 +1,12 @@
 #ifndef UART_UTIL_FUNCTIONS
 #define UART_UTIL_FUNCTIONS
 
-#include <stm8s103.h>
+#include <stm8/stm8s.h>
 
-void putchar(char c) {
+int putchar(int c) {
 	while(!(UART1_SR & (1 << 7)));
 	UART1_DR = c;
+	return c;
 }
 
 int getbyte() {
