@@ -13,22 +13,20 @@ uint8_t Enabled = 0;
 
 void Timer_ISR() __interrupt(11) //TIM1 update interrupt
 {
-	if (1) {
-		++PartOfCycle;
-		if (PartOfCycle > PulseWidths[CyclePtr]) {
-			++CyclePtr;
+	++PartOfCycle;
+	if (PartOfCycle > PulseWidths[CyclePtr]) {
+		++CyclePtr;
+		PartOfCycle = 0;
+		if (CyclePtr < PulseWidths_len) {
+			TIM1_CCER2 ^= (1<<0); //toggle timer output
+		}
+		else {
+			TIM1_CR1 &= ~(1<<0); //disable timer
+			TIM1_CCER2 &= ~(1<<0); //disable timer output
+			CyclePtr = 0;
 			PartOfCycle = 0;
-			if (CyclePtr < PulseWidths_len) {
-				TIM1_CCER2 ^= (1<<0); //toggle timer output
-			}
-			else {
-				TIM1_CR1 &= ~(1<<0); //disable timer
-				TIM1_CCER2 &= ~(1<<0); //disable timer output
-				CyclePtr = 0;
-				PartOfCycle = 0;
-				Enabled = 0;
-				PB_ODR ^= (1<<5); //toggle B5
-			}
+			Enabled = 0;
+			PB_ODR ^= (1<<5); //toggle B5
 		}
 	}
 	TIM1_SR1 = 0;
