@@ -1,0 +1,16 @@
+;	STMicroelectronics Workspace file
+
+[Version]
+Keyword=ST7Workspace-V0.7
+
+[Project0]
+Filename=radio_test\radio_test.stp
+Dependencies=
+
+[Project1]
+Filename=radio_xmit\radio_xmit.stp
+Dependencies=
+[Options]
+ActiveProject=radio_test
+ActiveConfig=Release
+AddSortedElements=1
