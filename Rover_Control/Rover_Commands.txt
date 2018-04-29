@@ -1,0 +1,73 @@
+request flash info
+uint8_t kind;
+uint8_t name[8];
+uint8_t ext[3];
+uint8_t size_f;
+uint8_t size_h;
+uint8_t size_l;
+
+request block range
+uint8_t kind;
+uint8_t start_f;
+uint8_t start_h;
+uint8_t start_l;
+uint8_t size_h;
+uint8_t size_l;
+
+response block
+uint8_t kind;
+uint8_t start_f;
+uint8_t start_h;
+uint8_t start_l;
+uint8_t size;
+uint8_t padding[3];
+uint8_t data[16];
+
+command set up cmdqueue
+uint8_t kind;
+uint8_t num_cmds;
+
+command add cmd
+uint8_t kind;
+uint8_t cmd;
+uint8_t cmd_data[30];
+
+command dump cmdqueue
+uint8_t kind;
+
+command get cmdqueue item
+uint8_t kind;
+uint8_t index;
+
+response cmdqueue info
+uint8_t kind;
+uint8_t num_cmds;
+uint8_t current_index;
+
+response cmdqueue item
+uint8_t kind;
+uint8_t cmd;
+uint8_t cmd_data[30];
+
+instr delay
+uint8_t cmd;
+uint8_t time_h;
+uint8_t time_l;
+uint8_t prescaler;
+uint8_t padding[27];
+
+instr snap image
+uint8_t cmd;
+uint8_t padding[30];
+
+instr drive
+uint8_t cmd;
+int8_t speed_left;
+int8_t speed_right;
+uint8_t time_h;
+uint8_t time_l;
+
+instr aim cam
+uint8_t cmd;
+uint8_t pos_h;
+uint8_t pos_l;

@@ -24,7 +24,10 @@ struct interrupt_vector {
 @far @interrupt void SendMessageTimerIt(void)
 {
 	TIM4_ClearITPendingBit(TIM4_IT_UPDATE);
-	send_message = TRUE;
+	++send_message_ctr;
+	if (!send_message_ctr) {
+		send_message = TRUE;
+	}
 }
 
 @far @interrupt void nRF24L01_Interrupt(void)

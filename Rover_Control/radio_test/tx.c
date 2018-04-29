@@ -16,9 +16,7 @@ volatile bool rf_interrupt = FALSE;
 volatile bool send_message = FALSE;
 volatile uint8_t send_message_ctr = 0;
 
-uint8_t address[5] = { 0x01, 0x01, 0x01, 0x01, 0x01 };
-
-void process_message(char *message);
+uint8_t to_address[5] = { 0x01, 0x01, 0x01, 0x01, 0x01 };
 
 main()
 {
@@ -32,31 +30,34 @@ main()
 	
 	GPIO_Init(GPIOA, GPIO_PIN_3, GPIO_MODE_IN_PU_IT);
 	EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOA, EXTI_SENSITIVITY_FALL_ONLY);
+	TIM4_TimeBaseInit(TIM4_PRESCALER_128, 128);
+	TIM4_ITConfig(TIM4_IT_UPDATE, ENABLE);
+	TIM4_Cmd(ENABLE);
 	
-	GPIO_Init(GPIOB, GPIO_PIN_5, GPIO_MODE_OUT_PP_LOW_SLOW);
+	nRF24L01_begin(&rf);
 	
 	enableInterrupts();
 	
-	nRF24L01_begin(&rf);
-	nRF24L01_listen(&rf, 0, address);
-	
 	while (1) {
 		if (rf_interrupt) {
-			rf_interrupt = FALSE;
-			while (nRF24L01_data_received(&rf)) {
-				nRF24L01Message msg;
-				nRF24L01_read_received_data(&rf, &msg);
-				process_message((char *)msg.data);
-			}
+			int success;
 			
-			nRF24L01_listen(&rf, 0, address);
+			rf_interrupt = FALSE;
+			success = nRF24L01_transmit_success(&rf);
+			if (success != 0)
+				nRF24L01_flush_transmit_message(&rf);
+		}
+
+		if (send_message) {
+			nRF24L01Message msg;
+			
+			send_message = FALSE;
+			on = !on;
+			if (on) memcpy(msg.data, "ON", 3);
+			else memcpy(msg.data, "OFF", 4);
+			msg.length = strlen((char *)msg.data) + 1;
+			msg.pipe_number = 0;
+			nRF24L01_transmit(&rf, to_address, &msg);
 		}
 	}
-}
-
-void process_message(char *message) {
-	if (strcmp(message, "ON") == 0)
-		GPIO_WriteHigh(GPIOB, GPIO_PIN_5);
-	else if (strcmp(message, "OFF") == 0)
-		GPIO_WriteLow(GPIOB, GPIO_PIN_5);
 }
