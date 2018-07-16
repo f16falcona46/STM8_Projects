@@ -1,4 +1,7 @@
-request flash info
+request get flash info
+uint8_t kind;
+
+response flash info
 uint8_t kind;
 uint8_t name[8];
 uint8_t ext[3];
@@ -23,19 +26,19 @@ uint8_t size;
 uint8_t padding[3];
 uint8_t data[16];
 
-command set up cmdqueue
+command cmdqueue init
 uint8_t kind;
 uint8_t num_cmds;
 
-command add cmd
+command cmdqueue add
 uint8_t kind;
 uint8_t cmd;
 uint8_t cmd_data[30];
 
-command dump cmdqueue
+request get cmdqueue info
 uint8_t kind;
 
-command get cmdqueue item
+request get cmdqueue item
 uint8_t kind;
 uint8_t index;
 
@@ -54,11 +57,9 @@ uint8_t cmd;
 uint8_t time_h;
 uint8_t time_l;
 uint8_t prescaler;
-uint8_t padding[27];
 
 instr snap image
 uint8_t cmd;
-uint8_t padding[30];
 
 instr drive
 uint8_t cmd;

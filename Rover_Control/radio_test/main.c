@@ -17,6 +17,7 @@ volatile bool send_message = FALSE;
 volatile uint8_t send_message_ctr = 0;
 
 uint8_t address[5] = { 0x01, 0x01, 0x01, 0x01, 0x01 };
+uint8_t to_address[5] = { 0x01, 0x01, 0x01, 0x01, 0x02 };
 
 void process_message(char *message);
 
@@ -24,6 +25,7 @@ main()
 {
 	bool on = FALSE;
 	nRF24L01 rf;
+	uint32_t cycle = 0;
 	
 	rf.ss.port = GPIOA;
 	rf.ss.pin = GPIO_PIN_1;
@@ -42,11 +44,30 @@ main()
 	
 	while (1) {
 		if (rf_interrupt) {
+			int success;
+			
 			rf_interrupt = FALSE;
+			
+			success = nRF24L01_transmit_success(&rf);
+			if (success != 0)
+				nRF24L01_flush_transmit_message(&rf);
+			
 			while (nRF24L01_data_received(&rf)) {
+				nRF24L01Message tx_msg;
 				nRF24L01Message msg;
+				uint8_t i;
+				
 				nRF24L01_read_received_data(&rf, &msg);
 				process_message((char *)msg.data);
+				
+				++cycle;
+				
+				for (i = 0; i < 4; ++i) {
+					tx_msg.data[i] = (cycle >> (i << 3)) & 0xff;
+				}
+				tx_msg.length = 4;
+				tx_msg.pipe_number = 0;
+				nRF24L01_transmit(&rf, to_address, &tx_msg);
 			}
 			
 			nRF24L01_listen(&rf, 0, address);

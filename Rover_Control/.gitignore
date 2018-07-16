@@ -1,2 +1,9 @@
 Debug/
 Release/
+*.dep
+*.wed
+*.wdb
+TAGS.txt
+TAGS_Filelist.txt
+checkres.spy
+*.pdb

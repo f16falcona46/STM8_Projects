@@ -10,7 +10,11 @@ Dependencies=
 [Project1]
 Filename=radio_xmit\radio_xmit.stp
 Dependencies=
+
+[Project2]
+Filename=i2c_slave\i2c_slave.stp
+Dependencies=
 [Options]
-ActiveProject=radio_test
-ActiveConfig=Release
+ActiveProject=i2c_slave
+ActiveConfig=Debug
 AddSortedElements=1
